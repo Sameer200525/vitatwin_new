@@ -1,0 +1,45 @@
+{
+  "model_name": "diabetes_risk_v2",
+  "dataset": "diabetes_data.csv (balanced BRFSS lifestyle indicators)",
+  "target": "Diabetes",
+  "framing": "binary: 0 = no diabetes, 1 = diabetes/at risk",
+  "classes": {
+    "0": "no_diabetes",
+    "1": "at_risk"
+  },
+  "feature_order": [
+    "Age",
+    "Sex",
+    "HighChol",
+    "CholCheck",
+    "BMI",
+    "Smoker",
+    "HeartDiseaseorAttack",
+    "PhysActivity",
+    "Fruits",
+    "Veggies",
+    "HvyAlcoholConsump",
+    "GenHlth",
+    "MentHlth",
+    "PhysHlth",
+    "DiffWalk",
+    "Stroke",
+    "HighBP"
+  ],
+  "test_accuracy": 0.7454961991044465,
+  "test_macro_f1": 0.7429861915756153,
+  "test_roc_auc": 0.8197553502520017,
+  "top_features": {
+    "GenHlth": 0.04704307409538315,
+    "BMI": 0.029337408342211102,
+    "Age": 0.02685905646917004,
+    "HighBP": 0.010383452325046094,
+    "HighChol": 0.009446801713658614,
+    "CholCheck": 0.0046437930485457414,
+    "HvyAlcoholConsump": 0.004617797078451935,
+    "HeartDiseaseorAttack": 0.004103637890941481,
+    "DiffWalk": 0.004088978101080975,
+    "MentHlth": 0.0018078652141178876
+  },
+  "notes": "Balanced dataset (real BRFSS survey responses, verified no synthetic-clone leakage between train/test)."
+}

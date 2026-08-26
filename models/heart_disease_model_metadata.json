@@ -1,0 +1,55 @@
+{
+  "model_name": "heart_disease_risk_v1",
+  "dataset": "heart_disease_data.csv (UCI Cleveland Heart Disease, synthetically expanded)",
+  "target": "target",
+  "classes": {
+    "0": "lower_risk",
+    "1": "at_risk"
+  },
+  "feature_order": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "honest_test_accuracy": 0.9135783945986496,
+  "honest_test_macro_f1": 0.9116567181984068,
+  "honest_test_roc_auc": 0.9543435495251786,
+  "top_features": {
+    "ca": 0.09756054787006949,
+    "oldpeak": 0.08116120855117408,
+    "cp": 0.07474248517055018,
+    "thalach": 0.03168602149394466,
+    "chol": 0.029384228300020077,
+    "restecg": 0.018938584847411156,
+    "thal": 0.016138436641036247,
+    "trestbps": 0.013286032177591566,
+    "slope": 0.006144566821449348,
+    "fbs": 0.0
+  },
+  "notes": "Evaluated with a group-aware split that keeps synthetic near-duplicate rows together, avoiding the ~100%% leaked accuracy a naive random split gives on this dataset. Final shipped model is refit on all available data.",
+  "feature_descriptions": {
+    "age": "age in years",
+    "sex": "1 = male, 0 = female",
+    "cp": "chest pain type (0-3): 0=typical angina, 1=atypical angina, 2=non-anginal, 3=asymptomatic",
+    "trestbps": "resting blood pressure (mm Hg)",
+    "chol": "serum cholesterol (mg/dl)",
+    "fbs": "fasting blood sugar > 120 mg/dl (1=true, 0=false)",
+    "restecg": "resting ECG results (0-2)",
+    "thalach": "maximum heart rate achieved",
+    "exang": "exercise-induced angina (1=yes, 0=no)",
+    "oldpeak": "ST depression induced by exercise relative to rest",
+    "slope": "slope of the peak exercise ST segment (0-2)",
+    "ca": "number of major vessels colored by fluoroscopy (0-4)",
+    "thal": "thalassemia result (1=normal, 2=fixed defect, 3=reversible defect)"
+  }
+}

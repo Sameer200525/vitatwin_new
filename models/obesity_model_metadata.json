@@ -1,0 +1,98 @@
+{
+  "model_name": "obesity_risk_v1",
+  "dataset": "ObesityDataSet_raw_and_data_sinthetic.csv",
+  "target": "overweight_or_obese (binary, derived from NObeyesdad)",
+  "classes": {
+    "0": "normal_or_underweight",
+    "1": "overweight_or_obese"
+  },
+  "feature_order": [
+    "Gender",
+    "Age",
+    "family_history_with_overweight",
+    "FAVC",
+    "FCVC",
+    "NCP",
+    "CAEC",
+    "SMOKE",
+    "CH2O",
+    "SCC",
+    "FAF",
+    "TUE",
+    "CALC",
+    "MTRANS"
+  ],
+  "categorical_encoders": {
+    "Gender": [
+      "Female",
+      "Male"
+    ],
+    "family_history_with_overweight": [
+      "no",
+      "yes"
+    ],
+    "FAVC": [
+      "no",
+      "yes"
+    ],
+    "CAEC": [
+      "Always",
+      "Frequently",
+      "Sometimes",
+      "no"
+    ],
+    "SMOKE": [
+      "no",
+      "yes"
+    ],
+    "SCC": [
+      "no",
+      "yes"
+    ],
+    "CALC": [
+      "Always",
+      "Frequently",
+      "Sometimes",
+      "no"
+    ],
+    "MTRANS": [
+      "Automobile",
+      "Bike",
+      "Motorbike",
+      "Public_Transportation",
+      "Walking"
+    ]
+  },
+  "test_accuracy": 0.9116719242902208,
+  "test_macro_f1": 0.8848469122989102,
+  "test_roc_auc": 0.9693950541590026,
+  "top_features": {
+    "Age": 0.1448590829778335,
+    "CAEC": 0.10989003809230316,
+    "family_history_with_overweight": 0.08743976010538441,
+    "TUE": 0.022872392281972333,
+    "NCP": 0.022414736682123605,
+    "CALC": 0.012891545645248659,
+    "MTRANS": 0.010558649105253415,
+    "SCC": 0.00752061547630174,
+    "Gender": 0.006390764042654873,
+    "FAF": 0.0034920450054199193
+  },
+  "notes": "Height/Weight excluded on purpose - the label is BMI-derived so including them would be a trivial calculator, not a real prediction. This model estimates obesity risk from lifestyle habits alone.",
+  "feature_descriptions": {
+    "Gender": "Male/Female",
+    "Age": "age in years",
+    "family_history_with_overweight": "yes/no - family history of being overweight",
+    "FAVC": "frequent consumption of high-caloric food (yes/no)",
+    "FCVC": "frequency of vegetable consumption (1-3 scale)",
+    "NCP": "number of main meals per day",
+    "CAEC": "eating between meals: no/Sometimes/Frequently/Always",
+    "SMOKE": "smokes (yes/no)",
+    "CH2O": "daily water intake (1-3 scale, roughly liters)",
+    "SCC": "monitors calorie consumption (yes/no)",
+    "FAF": "physical activity frequency (0-3 scale)",
+    "TUE": "time using technology devices (0-2 scale)",
+    "CALC": "alcohol consumption: no/Sometimes/Frequently/Always",
+    "MTRANS": "main transportation mode"
+  }
+}

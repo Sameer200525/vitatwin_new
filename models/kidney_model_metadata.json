@@ -1,0 +1,164 @@
+{
+  "model_name": "kidney_disease_risk_v1",
+  "dataset": "kidney_disease.csv (UCI CKD, cleaned + imputed)",
+  "target": "classification",
+  "classes": {
+    "0": "not_ckd",
+    "1": "ckd"
+  },
+  "feature_order": [
+    "age",
+    "bp",
+    "sg",
+    "al",
+    "su",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "hemo",
+    "pcv",
+    "wc",
+    "rc",
+    "rbc",
+    "pc",
+    "pcc",
+    "ba",
+    "htn",
+    "dm",
+    "cad",
+    "appet",
+    "pe",
+    "ane"
+  ],
+  "numeric_cols": [
+    "age",
+    "bp",
+    "sg",
+    "al",
+    "su",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "hemo",
+    "pcv",
+    "wc",
+    "rc"
+  ],
+  "categorical_cols": [
+    "rbc",
+    "pc",
+    "pcc",
+    "ba",
+    "htn",
+    "dm",
+    "cad",
+    "appet",
+    "pe",
+    "ane"
+  ],
+  "categorical_encoding_maps": {
+    "rbc": {
+      "abnormal": 0,
+      "normal": 1
+    },
+    "pc": {
+      "abnormal": 0,
+      "normal": 1
+    },
+    "pcc": {
+      "notpresent": 0,
+      "present": 1
+    },
+    "ba": {
+      "notpresent": 0,
+      "present": 1
+    },
+    "htn": {
+      "no": 0,
+      "yes": 1
+    },
+    "dm": {
+      "no": 0,
+      "yes": 1
+    },
+    "cad": {
+      "no": 0,
+      "yes": 1
+    },
+    "appet": {
+      "good": 0,
+      "poor": 1
+    },
+    "pe": {
+      "no": 0,
+      "yes": 1
+    },
+    "ane": {
+      "no": 0,
+      "yes": 1
+    }
+  },
+  "cv_accuracy": 0.9925,
+  "cv_macro_f1": 0.992010599271633,
+  "cv_roc_auc": 0.9996266666666667,
+  "top_features": {
+    "hemo": 0.19360278688291696,
+    "sg": 0.1894527147555655,
+    "sc": 0.009485435121768037,
+    "al": 0.003199159116588379,
+    "dm": 0.002154116354472435,
+    "appet": 0.0021433044021970772,
+    "age": 0.0,
+    "bp": 0.0,
+    "bu": 0.0,
+    "bgr": 0.0
+  },
+  "notes": "Small dataset (400 rows) with heavy missingness - median/mode imputed. Evaluated with 5-fold stratified cross-validation rather than a single holdout split for a more stable estimate. Unlike the other 4 disease models, this one genuinely needs some lab values (creatinine, hemoglobin, etc.) for good accuracy - marked optional/advanced in the API.",
+  "feature_descriptions": {
+    "age": "age in years",
+    "bp": "blood pressure (mm Hg)",
+    "sg": "urine specific gravity (lab)",
+    "al": "urine albumin level 0-5 (lab)",
+    "su": "urine sugar level 0-5 (lab)",
+    "bgr": "blood glucose random (lab, mg/dl)",
+    "bu": "blood urea (lab, mg/dl)",
+    "sc": "serum creatinine (lab, mg/dl)",
+    "sod": "sodium (lab, mEq/L)",
+    "pot": "potassium (lab, mEq/L)",
+    "hemo": "hemoglobin (lab, g/dl)",
+    "pcv": "packed cell volume (lab, %)",
+    "wc": "white blood cell count (lab, cells/cumm)",
+    "rc": "red blood cell count (lab, millions/cmm)",
+    "rbc": "red blood cells in urine: normal/abnormal (lab)",
+    "pc": "pus cells in urine: normal/abnormal (lab)",
+    "pcc": "pus cell clumps: present/notpresent (lab)",
+    "ba": "bacteria in urine: present/notpresent (lab)",
+    "htn": "hypertension history (yes/no, self-reportable)",
+    "dm": "diabetes history (yes/no, self-reportable)",
+    "cad": "coronary artery disease history (yes/no, self-reportable)",
+    "appet": "appetite: good/poor (self-reportable)",
+    "pe": "pedal edema / leg swelling (yes/no, self-reportable)",
+    "ane": "anemia (yes/no, self-reportable or from a recent CBC)"
+  },
+  "numeric_medians": {
+    "age": 46.0,
+    "bp": 70.0,
+    "sg": 1.02,
+    "al": 0.0,
+    "su": 0.0,
+    "bgr": 107.5,
+    "bu": 33.0,
+    "sc": 0.9,
+    "sod": 141.0,
+    "pot": 4.5,
+    "hemo": 15.0,
+    "pcv": 46.0,
+    "wc": 7500.0,
+    "rc": 5.3
+  },
+  "numeric_medians_note": "Computed from the notckd subgroup only (not overall population) - used as the neutral default for unfilled optional lab fields, representing typical healthy reference values."
+}

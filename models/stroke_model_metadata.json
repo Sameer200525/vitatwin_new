@@ -1,0 +1,49 @@
+{
+  "model_name": "stroke_risk_v2",
+  "dataset": "stroke_data.csv (balanced, synthetically expanded)",
+  "target": "stroke",
+  "classes": {
+    "0": "lower_risk",
+    "1": "at_risk"
+  },
+  "feature_order": [
+    "sex",
+    "age",
+    "hypertension",
+    "heart_disease",
+    "ever_married",
+    "work_type",
+    "Residence_type",
+    "avg_glucose_level",
+    "bmi",
+    "smoking_status"
+  ],
+  "honest_test_accuracy": 0.8550405953991881,
+  "honest_test_macro_f1": 0.8547353637016113,
+  "honest_test_roc_auc": 0.9140034572246718,
+  "top_features": {
+    "avg_glucose_level": 0.3026660594723015,
+    "bmi": 0.26630749315938884,
+    "hypertension": 0.09306797230399151,
+    "heart_disease": 0.06979796587935863,
+    "work_type": 0.06389082360262496,
+    "ever_married": 0.033799907474242954,
+    "Residence_type": 0.025694158485612805,
+    "smoking_status": 0.013592152706655392,
+    "age": 0.008763171858991291,
+    "sex": -0.0009042736293442654
+  },
+  "notes": "Evaluated with a group-aware split to avoid synthetic near-duplicate leakage. Final model refit on all data.",
+  "feature_descriptions": {
+    "sex": "1 = male, 0 = female",
+    "age": "age in years",
+    "hypertension": "1 = has hypertension",
+    "heart_disease": "1 = has heart disease",
+    "ever_married": "1 = yes",
+    "work_type": "encoded work category",
+    "Residence_type": "1 = urban, 0 = rural",
+    "avg_glucose_level": "average blood glucose level",
+    "bmi": "body mass index",
+    "smoking_status": "encoded smoking category"
+  }
+}
