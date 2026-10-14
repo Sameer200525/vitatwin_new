@@ -2,13 +2,11 @@
 VitaTwin Backend API
 Run with: uvicorn main:app --reload --port 8000
 
-This is the vertical-slice backend: currently serves the diabetes risk
-model only. Each additional model (hypertension, obesity, stroke, kidney)
-will get its own /predict/<model> endpoint following the same pattern,
-and a /predict/overview endpoint will later aggregate all of them into
-one digital-twin health score.
+Serves the five trained risk models. Hypertension is not an ML model; the
+frontend reports a transparent measurement-based rule check instead.
 """
 
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -18,19 +16,25 @@ import pandas as pd
 from pathlib import Path
 
 from code_mappings import (
-    age_to_bracket, EDUCATION_OPTIONS, INCOME_OPTIONS,
-    GENERAL_HEALTH_OPTIONS, bmi as compute_bmi,
-    CHEST_PAIN_OPTIONS, RESTING_ECG_OPTIONS, ST_SLOPE_OPTIONS,
-    THALASSEMIA_OPTIONS, WORK_TYPE_OPTIONS,
+    age_to_bracket, GENERAL_HEALTH_OPTIONS, bmi as compute_bmi, WORK_TYPE_OPTIONS,
 )
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
 
 app = FastAPI(title="VitaTwin API", version="0.1.0")
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "VITATWIN_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this before real deployment
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -91,7 +95,9 @@ class DiabetesRiskOutput(BaseModel):
     risk_label: str
     risk_probability: float
     bmi: float
-    top_contributing_factors: list[str]
+    global_feature_importance: list[str] = Field(
+        ..., description="Dataset-level feature importance names, not verified causes for this individual prediction."
+    )
     disclaimer: str = (
         "This is a statistical risk estimate based on population survey data, "
         "not a medical diagnosis. Consult a healthcare professional for advice."
@@ -136,13 +142,13 @@ def predict_diabetes(payload: DiabetesRiskInput):
     proba = diabetes_model.predict_proba(X)[0][1]  # probability of class 1 ("at risk")
     label = "at_risk" if proba >= 0.5 else "lower_risk"
 
-    top_factors = list(diabetes_meta["top_features"].keys())[:5]
+    global_importance = list(diabetes_meta["top_features"].keys())[:5]
 
     return DiabetesRiskOutput(
         risk_label=label,
         risk_probability=round(float(proba), 3),
         bmi=bmi_val,
-        top_contributing_factors=top_factors,
+        global_feature_importance=global_importance,
     )
 
 
@@ -153,13 +159,13 @@ def predict_diabetes(payload: DiabetesRiskInput):
 class HeartDiseaseInput(BaseModel):
     age_years: int = Field(..., ge=18, le=100)
     sex: str = Field(..., pattern="^(male|female)$")
-    resting_blood_pressure: float = Field(..., description="mm Hg, e.g. from a home BP cuff")
-    cholesterol: float = Field(..., description="serum cholesterol, mg/dl")
+    resting_blood_pressure: float = Field(..., gt=0, description="Measured mm Hg")
+    cholesterol: float = Field(..., gt=0, description="Measured serum cholesterol, mg/dl")
     fasting_blood_sugar_over_120: bool
-    max_heart_rate_achieved: float = Field(..., description="from a stress test or fitness tracker max HR")
+    max_heart_rate_achieved: float = Field(..., gt=0, description="Measured during a stress test or clinical exercise assessment")
     exercise_induced_angina: bool
     st_depression_exercise: float = Field(..., description="ST depression induced by exercise relative to rest; 0 if unknown")
-    major_vessels_colored: int = Field(..., ge=0, le=4, description="from angiogram; 0 if unknown/not tested")
+    major_vessels_colored: int = Field(..., ge=0, le=4, description="from an angiogram; enter only if tested")
     # NOTE: these 4 fields come directly from a cardiac test report (ECG/angiogram).
     # This dataset's category codes do not reliably follow standard textbook
     # ordering (verified empirically against known positive/negative cases),
@@ -174,7 +180,15 @@ class HeartDiseaseInput(BaseModel):
 class RiskOutput(BaseModel):
     risk_label: str
     risk_probability: float
-    top_contributing_factors: list[str]
+    global_feature_importance: list[str] = Field(
+        ..., description="Dataset-level feature importance names, not verified causes for this individual prediction."
+    )
+    imputed_features: list[str] = Field(
+        default_factory=list, description="Input features replaced with training medians by the kidney model."
+    )
+    assumed_defaults: list[str] = Field(
+        default_factory=list, description="Categorical input fields assigned a default because no value was supplied."
+    )
     disclaimer: str = (
         "This is a statistical risk estimate based on population data, "
         "not a medical diagnosis. Consult a healthcare professional for advice."
@@ -201,12 +215,12 @@ def predict_heart_disease(payload: HeartDiseaseInput):
     X = pd.DataFrame([feature_map])[heart_meta["feature_order"]]
     proba = heart_model.predict_proba(X)[0][1]
     label = "at_risk" if proba >= 0.5 else "lower_risk"
-    top_factors = list(heart_meta["top_features"].keys())[:5]
+    global_importance = list(heart_meta["top_features"].keys())[:5]
 
     return RiskOutput(
         risk_label=label,
         risk_probability=round(float(proba), 3),
-        top_contributing_factors=top_factors,
+        global_feature_importance=global_importance,
     )
 
 
@@ -222,7 +236,7 @@ class StrokeInput(BaseModel):
     ever_married: bool
     work_type: str = Field(..., description=f"One of: {list(WORK_TYPE_OPTIONS.keys())}")
     residence_type: str = Field(..., pattern="^(urban|rural)$")
-    avg_glucose_level: float = Field(..., description="mg/dL; from a home glucose meter or recent lab, if known")
+    avg_glucose_level: float = Field(..., gt=0, description="Measured mg/dL from a glucose meter or recent lab")
     weight_kg: float = Field(..., gt=0)
     height_cm: float = Field(..., gt=0)
     is_smoker: bool
@@ -250,12 +264,12 @@ def predict_stroke(payload: StrokeInput):
     X = pd.DataFrame([feature_map])[stroke_meta["feature_order"]]
     proba = stroke_model.predict_proba(X)[0][1]
     label = "at_risk" if proba >= 0.5 else "lower_risk"
-    top_factors = list(stroke_meta["top_features"].keys())[:5]
+    global_importance = list(stroke_meta["top_features"].keys())[:5]
 
     return RiskOutput(
         risk_label=label,
         risk_probability=round(float(proba), 3),
-        top_contributing_factors=top_factors,
+        global_feature_importance=global_importance,
     )
 
 
@@ -308,12 +322,12 @@ def predict_obesity(payload: ObesityInput):
     X = pd.DataFrame([feature_map])[obesity_meta["feature_order"]]
     proba = obesity_model.predict_proba(X)[0][1]
     label = "at_risk" if proba >= 0.5 else "lower_risk"
-    top_factors = list(obesity_meta["top_features"].keys())[:5]
+    global_importance = list(obesity_meta["top_features"].keys())[:5]
 
     return RiskOutput(
         risk_label=label,
         risk_probability=round(float(proba), 3),
-        top_contributing_factors=top_factors,
+        global_feature_importance=global_importance,
     )
 
 
@@ -324,7 +338,7 @@ def predict_obesity(payload: ObesityInput):
 class KidneyInput(BaseModel):
     # Basic / always self-reportable
     age_years: int = Field(..., ge=1, le=110)
-    blood_pressure: float = Field(..., description="mm Hg")
+    blood_pressure: float = Field(..., gt=0, description="Measured mm Hg")
     hypertension_history: bool
     diabetes_history: bool
     coronary_artery_disease_history: bool
@@ -333,19 +347,19 @@ class KidneyInput(BaseModel):
     anemia: bool
 
     # Optional / advanced - from a recent blood or urine test
-    urine_specific_gravity: float | None = Field(None, description="Lab value, leave blank if unknown (1.005-1.025 typical)")
+    urine_specific_gravity: float | None = Field(None, gt=0, description="Measured lab value; required for this model's minimum input set")
     urine_albumin: float | None = Field(None, ge=0, le=5, description="Lab value 0-5, leave blank if unknown")
     urine_sugar: float | None = Field(None, ge=0, le=5, description="Lab value 0-5, leave blank if unknown")
     urine_rbc: str | None = Field(None, pattern="^(normal|abnormal)$", description="Leave blank if unknown")
     urine_pus_cells: str | None = Field(None, pattern="^(normal|abnormal)$", description="Leave blank if unknown")
     urine_pus_cell_clumps: bool | None = None
     urine_bacteria: bool | None = None
-    blood_glucose_random: float | None = Field(None, description="mg/dl, leave blank if unknown")
-    blood_urea: float | None = Field(None, description="mg/dl, leave blank if unknown")
-    serum_creatinine: float | None = Field(None, description="mg/dl, leave blank if unknown")
+    blood_glucose_random: float | None = Field(None, gt=0, description="Measured mg/dl, leave null if unknown")
+    blood_urea: float | None = Field(None, gt=0, description="Measured mg/dl, leave null if unknown")
+    serum_creatinine: float | None = Field(None, gt=0, description="Measured mg/dl; required for this model's minimum input set")
     sodium: float | None = Field(None, description="mEq/L, leave blank if unknown")
     potassium: float | None = Field(None, description="mEq/L, leave blank if unknown")
-    hemoglobin: float | None = Field(None, description="g/dl, leave blank if unknown")
+    hemoglobin: float | None = Field(None, gt=0, description="Measured g/dl; required for this model's minimum input set")
     packed_cell_volume: float | None = Field(None, description="%, leave blank if unknown")
     white_cell_count: float | None = Field(None, description="cells/cumm, leave blank if unknown")
     red_cell_count: float | None = Field(None, description="millions/cmm, leave blank if unknown")
@@ -353,6 +367,18 @@ class KidneyInput(BaseModel):
 
 @app.post("/predict/kidney_disease", response_model=RiskOutput)
 def predict_kidney(payload: KidneyInput):
+    required_labs = {
+        "serum_creatinine": payload.serum_creatinine,
+        "hemoglobin": payload.hemoglobin,
+        "urine_specific_gravity": payload.urine_specific_gravity,
+    }
+    missing_labs = [name for name, value in required_labs.items() if value is None]
+    if missing_labs:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Kidney model requires these measured lab values: {', '.join(missing_labs)}",
+        )
+
     enc = kidney_meta["categorical_encoding_maps"]
     numeric_cols = kidney_meta["numeric_cols"]
 
@@ -366,8 +392,11 @@ def predict_kidney(payload: KidneyInput):
 
     feature_map = {col: numeric_values.get(col) for col in numeric_cols}
 
+    assumed_defaults = []
+
     def encode_cat(col, raw_value, default_key):
         if raw_value is None:
+            assumed_defaults.append(f"{col}: assumed {default_key}")
             raw_value = default_key
         mapping = enc[col]
         if raw_value not in mapping:
@@ -388,19 +417,23 @@ def predict_kidney(payload: KidneyInput):
     feature_map["ane"] = encode_cat("ane", "yes" if payload.anemia else "no", "no")
 
     X = pd.DataFrame([feature_map])[kidney_meta["feature_order"]]
-    # Blank optional lab values -> fall back to the training-set median for that lab
-    # (medically sensible neutral default, unlike 0 which is nonsensical for e.g. hemoglobin).
+    # The training script median-imputed optional CKD fields. Keep the caller's
+    # missing values as null in the request and report every median substitution.
     medians = kidney_meta["numeric_medians"]
+    imputed_features = []
     for col in kidney_meta["numeric_cols"]:
         if pd.isna(X.at[0, col]):
             X.at[0, col] = medians[col]
+            imputed_features.append(kidney_meta.get("feature_descriptions", {}).get(col, col))
 
     proba = kidney_model.predict_proba(X)[0][1]
     label = "at_risk" if proba >= 0.5 else "lower_risk"
-    top_factors = list(kidney_meta["top_features"].keys())[:5]
+    global_importance = list(kidney_meta["top_features"].keys())[:5]
 
     return RiskOutput(
         risk_label=label,
         risk_probability=round(float(proba), 3),
-        top_contributing_factors=top_factors,
+        global_feature_importance=global_importance,
+        imputed_features=imputed_features,
+        assumed_defaults=assumed_defaults,
     )
